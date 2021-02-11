@@ -348,20 +348,3 @@ class Translator(commands.Cog):
         '''translates a given message'''
         trans_msg, src_lang, conf = await self.translate_message(message, dest_lang)
         await ctx.send(embed=await self.create_embed_translated(trans_msg, dest_lang, src_lang, conf))        
-
-    @checks.is_owner()
-    @commands.command()
-    async def clearconfig(self, ctx):
-        await self.config.clear_all()
-        await ctx.send(await self.config.reactions())
-        await ctx.send(await self.config.guild(ctx.guild).reactions())
-
-    @checks.is_owner()
-    @commands.command()
-    async def showconfig(self, ctx):
-        await ctx.send(await self.config.reactions())
-        await ctx.send(await self.config.guild(ctx.guild).reactions())
-
-    @commands.command()
-    async def test(self, ctx):
-        await ctx.send(supported_languages)
