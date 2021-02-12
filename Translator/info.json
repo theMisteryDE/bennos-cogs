@@ -6,7 +6,7 @@
     "install_msg": "Thanks for installing, have fun.",
 	"short": "Translate messages.",
 	"tags": [
-		"wolfram"
+		"Translator"
 	],
 	"requirements": [
 		"requests"
