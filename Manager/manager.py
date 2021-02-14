@@ -157,6 +157,7 @@ class Manager(commands.Cog):
             await conf.time_since_reset.set(current_time)
             await conf.users_since_reset.set(0)
 
+    @checks.admin()
     @commands.group(name="banish")
     async def banish(self, ctx):
         """Manage the blacklist settings for this server"""
@@ -229,12 +230,14 @@ class Manager(commands.Cog):
         else:
             await ctx.send("Action is not valid. Valid actions are: \n`{}, {}, {}`".format(valid_args[0], valid_args[1], valid_args[2]))    
 
+    @checks.admin()
     @commands.group(name="captcha")
     async def captcha(self, ctx):
         """Modify the captcha settings"""
 
     @captcha.command(name="toggle")
     async def captcha_toggle(self, ctx):
+        """Turn the captcha on/off"""
         guild = ctx.guild
         current_status = await self.config.guild(guild).captcha_configured()
 
@@ -304,6 +307,7 @@ class Manager(commands.Cog):
 
     @captcha.command(name="mode")
     async def captcha_mode(self, ctx, mode):
+        """Choose who should see a captcha on join"""
         guild = ctx.guild
         args = ["threshold", "everyone", "none"]
         if mode.lower() in args:
@@ -409,36 +413,3 @@ class Manager(commands.Cog):
                     break
 
             Path(str(storage_path_captchas) + f"/{member}.png").unlink()
-
-    @commands.command()
-    async def test(self, ctx):
-        length = random.randint(4, 8)
-        text = ''.join(random.choice(string.ascii_uppercase + string.digits + string.ascii_lowercase) for _ in range(length))
-        captcha = await self.create_captcha(text, length)
-
-        storage_path_captchas = bundled_data_path(self) / "captchas"
-        cv2.imwrite(f"{storage_path_captchas}/{ctx.author}.png", captcha)
-        file = discord.File(fp=str(storage_path_captchas) + f"/{ctx.author}.png", filename=f"{ctx.author}.png")
-
-        await ctx.author.send(file=file)
-
-        for i in range(3, 0, -1):
-            try:
-                response = await self.bot.wait_for('message', check=self.message_check(channel=ctx.author.dm_channel), timeout=30)
-                if response.content == text:
-                    await ctx.author.send("Captcha passed!")
-                    break
-                else:
-                    await ctx.author.send("Wrong answer. {} tries left.".format(str(i - 1)))
-
-                if i == 1:
-                    await ctx.author.send("Captcha failed. Rejoin to try again.")
-            except asyncio.TimeouError:
-                await ctx.author.send("Timeout.")
-                break
-
-        Path(str(storage_path_captchas) + f"/{ctx.author}.png").unlink()
-
-    @commands.command()
-    async def test2(self, ctx):
-        self.task = self.bot.loop.create_task(self.initialize())
