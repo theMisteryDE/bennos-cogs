@@ -1,5 +1,4 @@
 from redbot.core import commands, Config, checks
-import requests
 import json
 import aiohttp
 import discord
@@ -13,7 +12,6 @@ class Translator(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=42069)
         self.request_url = "https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl={}&tl={}&q={}"
-        self.session = aiohttp.ClientSession()
 
         default_global = {
             "reactions": {}
@@ -37,7 +35,10 @@ class Translator(commands.Cog):
     async def translate_message(self, message, dest_lang, src_lang = "auto"):
         """Translating the messages.
         Using a custom forked google translate API link."""
-        trans_dict = requests.get(self.request_url.format(src_lang, dest_lang, message)).json()
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.request_url.format(src_lang, dest_lang, message)) as resp:
+                trans_dict = json.loads(await resp.text())
 
         trans_msg = trans_dict["sentences"][0]["trans"]
         src_lang = trans_dict["src"]
