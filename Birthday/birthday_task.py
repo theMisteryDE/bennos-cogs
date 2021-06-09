@@ -45,7 +45,6 @@ class Tasks():
                 time_for_guild_loop = pytz.timezone("utc").localize(time_for_guild_loop)
 
                 if datetime.datetime.now(pytz.timezone("utc")) >= time_for_guild_loop:
-                    print(time_for_guild_loop)
                     await self.update_time_for_guild(guild)
 
                     channel = guild.get_channel(await self.config.guild(guild).channel())
