@@ -311,6 +311,10 @@ class Birthday(commands.Cog, Tasks):
                     await self.bot.wait_for("message", check=lambda message: self.check(m=message, ctx=ctx, content="yes"), timeout=30.0)
 
                 except asyncio.TimeoutError:
+                    try:
+                        await maybe_delete.delete()
+                    except:
+                        pass
                     return
 
             try:
@@ -347,7 +351,11 @@ class Birthday(commands.Cog, Tasks):
                     except TypeError:
                         await ctx.send("Message is not json serializable. Maybe you used unsupported emotes?")
             except asyncio.TimeoutError:
-                await maybe_delete.delete()
+                try:
+                    await maybe_delete.delete()
+                except:
+                    pass
+                return
 
         else:
             await ctx.send(":x: This server does not allow custom messages. You can ask the server mods for the reason.")
@@ -395,25 +403,32 @@ class Birthday(commands.Cog, Tasks):
             mode = await self.config.guild(ctx.guild).upcoming_first()
 
         bdays = await self.get_bdays(ctx.guild)
-        bdays = await self.sort_bdays(bdays, mode, ctx.guild)
 
-        msg = ""
-        previous_month = None
-        async for bday in AsyncIter(bdays):
-            month = datetime.datetime(year=1, month=int(bday[2]), day=1).strftime("%B")
-            if month != previous_month:
-                msg += f"\n{bold(month)}\n"
-                previous_month = month
 
-            try:
-                msg += f"{bday[1]}: {bold(str(bday[0]))} - {bold(str(bday[3]))} years\n"
-            except KeyError:
-                msg += f"{bday[1]}: {bold(str(bday[0]))}\n"
+        if bdays != []:
+            bdays = await self.sort_bdays(bdays, mode, ctx.guild)
 
-        pages = list(pagify(msg, delims=["\n\n"]))
+            msg = ""
+            previous_month = None
 
-        pages = menus.MenuPages(source=MenuSource(pages, "Birthday list"), clear_reactions_after=True)
-        await pages.start(ctx)
+            async for bday in AsyncIter(bdays):
+                month = datetime.datetime(year=1, month=int(bday[2]), day=1).strftime("%B")
+                if month != previous_month:
+                    msg += f"\n{bold(month)}\n"
+                    previous_month = month
+
+                try:
+                    msg += f"{bday[1]}: {bold(str(bday[0]))} - {bold(str(bday[3]))} years\n"
+                except KeyError:
+                    msg += f"{bday[1]}: {bold(str(bday[0]))}\n"
+
+            pages = list(pagify(msg, delims=["\n\n"]))
+
+            pages = menus.MenuPages(source=MenuSource(pages, "Birthday list"), clear_reactions_after=True)
+            await pages.start(ctx)
+        
+        else:
+            await ctx.send("No birthdays set on this server.")
 
     @commands.guild_only()
     @bday.group(name="cleardata", invoke_without_subcommand=True)
