@@ -381,7 +381,10 @@ class Birthday(commands.Cog, Tasks):
                     await self.set_bday_for_user(bday, ctx.author)
                     await ctx.send(f"Your birthday is now set to: `{bday}`")
             except asyncio.TimeoutError:
-                await maybe_delete.delete()
+                try:
+                    await maybe_delete.delete()
+                except:
+                    pass
 
     @commands.guild_only()
     @bday.command(name="remove")
