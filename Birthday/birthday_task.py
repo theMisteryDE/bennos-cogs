@@ -73,7 +73,7 @@ class Tasks():
                                             await bday[0].add_roles(role, reason="Birthday")  
 
                         if msg != "":
-                            pages = list(pagify(msg, delims=["\n\n"]))
+                            pages = list(pagify(msg, delims=["\n\n"], page_length=1000))
                             for page in pages:
                                 embed = discord.Embed(color=discord.Color.blue(), description=page)
                                 await channel.send(embed=embed)                  

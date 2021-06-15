@@ -425,7 +425,7 @@ class Birthday(commands.Cog, Tasks):
                 except IndexError:
                     msg += f"{bday[1]}: {bold(str(bday[0]))}\n"
 
-            pages = list(pagify(msg, delims=["\n\n"]))
+            pages = list(pagify(msg, delims=["\n\n"], page_length=1000))
 
             pages = menus.MenuPages(source=MenuSource(pages, "Birthday list"), clear_reactions_after=True)
             await pages.start(ctx)
