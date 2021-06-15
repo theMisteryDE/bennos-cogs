@@ -19,16 +19,22 @@ from .birthday_task import Tasks
 class MenuSource(menus.ListPageSource):
     def __init__(self, data, name: str):
         self.name = name
-        super().__init__(data, per_page=4)
+        self.length = len(data)
+        super().__init__(data, per_page=1)
 
-    async def format_page(self, menu, entries: list):
+    def is_paginating(self) -> bool:
+        return True
+
+    async def format_page(self, menu, page) -> discord.Embed:
         offset = menu.current_page * self.per_page
+        ctx = menu.ctx
 
-        embed = discord.Embed(color=discord.Color.blue())
-        embed.add_field(name=bold(self.name), value=entries[offset])
-        embed.set_footer(text=f"Page {offset + 1}/{len(entries)}")
-
-        return embed
+        if await ctx.embed_requested():
+            embed = discord.Embed(color=await ctx.embed_color())
+            embed.add_field(name=bold(self.name), value=page)
+            embed.set_footer(text=f"Page {offset + 1}/{self.length}")
+            
+            return embed
         
 class Birthday(commands.Cog, Tasks):
     def __init__(self, bot):
