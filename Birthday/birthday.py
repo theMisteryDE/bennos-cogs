@@ -422,7 +422,7 @@ class Birthday(commands.Cog, Tasks):
 
                 try:
                     msg += f"{bday[1]}: {bold(str(bday[0]))} - {bold(str(bday[3]))} years\n"
-                except KeyError:
+                except IndexError:
                     msg += f"{bday[1]}: {bold(str(bday[0]))}\n"
 
             pages = list(pagify(msg, delims=["\n\n"]))
@@ -498,30 +498,6 @@ class Birthday(commands.Cog, Tasks):
 
         except asyncio.TimeoutError:
             await msg.delete()       
-
-    @commands.command(name="temp")
-    async def temp(self, ctx):
-        async for guild in AsyncIter(self.bot.guilds):
-            if await self.config.guild(guild).birthday_enabled():
-                channel = guild.get_channel(await self.config.guild(guild).channel())
-                if channel != None:
-                    bdays = await self.get_bdays(guild)
-
-                    msg = ""
-                    async for bday in AsyncIter(bdays):
-                        now = datetime.datetime.now(pytz.timezone(await self.config.guild(guild).timezone()))
-                        month = now.month
-                        day = now.day
-
-                        if (int(bday[1]) == int(day)) and (int(bday[2]) == int(month)):
-                            bday_msg = await self.get_custom_message(bday[0])
-                            msg += bday_msg + "\n\n"
-
-                    if msg != "":
-                        pages = list(pagify(msg, delims=["\n\n"]))
-                        for page in pages:
-                            embed = discord.Embed(color=discord.Color.blue(), description=page, title="Today's birthdays")
-                            await channel.send(embed=embed, allowed_mentions=discord.AllowedMentions(users=True))
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
