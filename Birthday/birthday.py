@@ -82,24 +82,28 @@ class Birthday(commands.Cog, Tasks):
             await self.config.member_from_ids(guild.id, user.id).clear()
 
     async def sort_bdays(self, bdays: list, mode: bool, guild: discord.Guild):
-        if mode == False: #Starting from the beginning of the year
-            bdays.sort(key=operator.itemgetter(2, 1))
-        else:
-            now = datetime.datetime.now(pytz.timezone(await self.config.guild(guild).timezone()))
+        passed = []
+        upcoming = []
 
-            passed = []
-            upcoming = []
+        now = datetime.datetime.now(pytz.timezone(await self.config.guild(guild).timezone()))
 
-            for bday in bdays:
-                if ((int(bday[1]) >= now.day) and (int(bday[2]) == now.month)) or (int(bday[2]) > now.month):
-                    upcoming.append(bday)
-                else:
+        for bday in bdays:
+            if ((int(bday[1]) >= now.day) and (int(bday[2]) == now.month)) or (int(bday[2]) > now.month):
+                upcoming.append(bday)
+            else:
+                try:
+                    passed.append(int(bday[3]) + 1)
+                except KeyError:
                     passed.append(bday)
 
-            upcoming.sort(key=operator.itemgetter(2, 1))
-            passed.sort(key=operator.itemgetter(2, 1))
-            bdays = upcoming + passed
+        upcoming.sort(key=operator.itemgetter(2, 1))
+        passed.sort(key=operator.itemgetter(2, 1))
 
+        if mode: #Starting from the beginning of the year
+            bdays = upcoming + passed
+        else:
+            bdays = passed + upcoming
+        
         return bdays
 
     async def get_bdays(self, guild):
