@@ -93,7 +93,7 @@ class Birthday(commands.Cog, Tasks):
             else:
                 try:
                     passed.append((bday[0], bday[1], bday[2], str(int(bday[3]) + 1)))
-                except KeyError:
+                except IndexError:
                     passed.append(bday)
 
         upcoming.sort(key=operator.itemgetter(2, 1))
