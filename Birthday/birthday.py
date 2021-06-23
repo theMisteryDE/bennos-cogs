@@ -91,7 +91,7 @@ class Birthday(commands.Cog, Tasks):
             upcoming = []
 
             for bday in bdays:
-                if (int(bday[1]) >= now.day) and (int(bday[2]) >= now.month):
+                if ((int(bday[1]) >= now.day) and (int(bday[2]) == now.month)) or (int(bday[2]) > now.month):
                     upcoming.append(bday)
                 else:
                     passed.append(bday)
