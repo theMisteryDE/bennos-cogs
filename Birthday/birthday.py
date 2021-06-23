@@ -92,7 +92,7 @@ class Birthday(commands.Cog, Tasks):
                 upcoming.append(bday)
             else:
                 try:
-                    passed.append(str(int(bday[3]) + 1))
+                    passed.append((bday[0], bday[1], bday[2], str(int(bday[3]) + 1)))
                 except KeyError:
                     passed.append(bday)
 
