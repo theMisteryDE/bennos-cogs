@@ -34,10 +34,15 @@ class Translator(commands.Cog):
 
     async def translate_message(self, message, dest_lang, src_lang = "auto"):
         """Translating the messages.
-        Using a custom forked google translate API link."""
+        Using an open google translate API link."""
         
+        options = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
+            "accept-language": "en-IN,en-GB;q=0.9,en-US",
+        }
+
         async with aiohttp.ClientSession() as session:
-            async with session.get(self.request_url.format(src_lang, dest_lang, message)) as resp:
+            async with session.get(self.request_url.format(src_lang, dest_lang, message), headers=options) as resp:
                 trans_dict = json.loads(await resp.text())
 
         trans_msg = trans_dict["sentences"][0]["trans"]
