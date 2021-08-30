@@ -11,6 +11,7 @@ from redbot.core.data_manager import bundled_data_path
 
 from ..utils.wallpaper import Wallpaper
 from ..utils import api_requests, general, command_checks
+from ..utils.abc import MixinMeta, CompositeMetaClass
 
 log = logging.getLogger("red.cogs.hypixel.autostats")
 
@@ -53,23 +54,24 @@ class AutoStats():
             return False
 
         resp_stats, status = await api_requests.request_hypixel(self.ctx, self.user_list[0]["uuid"], topic="recentgames")
-        
-        for idx, item in enumerate(resp_stats["games"]):
-            if self.gametype == item["gameType"]:
-                if item["date"] == self.game_start_time:
-                    if item.get("ended") != None:
-                        self.game_start_time = 0
-                        self.last_updated = time.time()
-                        return True
-                else:
-                    if item.get("ended") == None:
-                        if idx == 0:
-                            temp = True if self.game_start_time != 0 else False
-                            self.last_updated = time.time() if temp else self.last_updated
-                            self.game_start_time = item["date"]
-                            return temp
-        else:
-            return False
+
+        if status == 200:
+            for idx, item in enumerate(resp_stats["games"]):
+                if self.gametype == item["gameType"]:
+                    if item["date"] == self.game_start_time:
+                        if item.get("ended") != None:
+                            self.game_start_time = 0
+                            self.last_updated = time.time()
+                            return True
+                    else:
+                        if item.get("ended") == None:
+                            if idx == 0:
+                                temp = True if self.game_start_time != 0 else False
+                                self.last_updated = time.time() if temp else self.last_updated
+                                self.game_start_time = item["date"]
+                                return temp
+            else:
+                return False
 
     async def fetch_stats(self):
         if self.message_list != []:
@@ -104,7 +106,7 @@ class AutoStats():
                 xp = gamemode_stats.get(key_json.get("xp_key"))
 
                 if isinstance(user["name"], discord.Member):
-                    color = await self.ctx.cog.config.user(user["name"]).color()
+                    color = await self.ctx.cog.config.user(user["name"]).header_color()
                     skin = await self.ctx.cog.config.user(user["name"]).skin()
                 else:
                     color, skin = None, None
@@ -124,7 +126,7 @@ class AutoStats():
                 pass
         self.message_list.clear()
 
-class AutoStatsCommands():
+class AutoStatsCommands(MixinMeta, metaclass=CompositeMetaClass):
     @commands.group(name="autostats", invoke_without_command=True)
     async def autostats(self, ctx, gamemode, *, username_list = None):
         """Starts autostats in specific gamemode
@@ -146,17 +148,14 @@ class AutoStatsCommands():
                 await ctx.send(f"No modules added for `{gamemode}`. Add a valid module before with `[p]module add`")
             else:
                 user_list = []
-                username_list = await general.create_username_list(ctx.author, username_list)
+                if username_list:
+                    username_list = self.str_to_list(username_list)
+                else:
+                    username_list = [ctx.author]
+
                 for idx, username in enumerate(username_list):
-                    uuid = await self.username_to_uuid(ctx, username)
-                    if uuid != None:
-                        try:
-                            if not isinstance(username, discord.Member):
-                                username = await MemberConverter().convert(ctx, username)
-                            if isinstance(username, discord.Member):
-                                username_list[idx] = username.display_name
-                        except discord.ext.commands.BadArgument:
-                            pass
+                    uuid, *_ = await self.get_user_data(ctx, username)
+                    if uuid:
                         user_list.append({"name": username, "uuid": uuid})
                     else:
                         await ctx.send("Invalid usernames.")
@@ -166,13 +165,13 @@ class AutoStatsCommands():
                         await ctx.send("You already have an autostats task running. Cancel it first.")
                     else:
                         if len(self.guild_autostats_list.keys()) >= 5:
-                            if not await self.config.user(ctx.author).api_key():
+                            if not await self.config.user(ctx.author).apikey():
                                 await ctx.send("Already five autostats running on guild api key. Please set your own first.")
                                 return
                         autostats = AutoStats(user_list, key_json[gamemode.lower()]["stats_key"], ctx)
                         task = asyncio.create_task(self.autostats_task(autostats, str(ctx.author)))
                         task.add_done_callback(exception_catching_callback)
-                        apikey = await self.config.user(ctx.author).api_key()
+                        apikey = await self.config.user(ctx.author).apikey()
                         if not apikey:
                             self.guild_autostats_list[str(ctx.author)] = task
                         else:

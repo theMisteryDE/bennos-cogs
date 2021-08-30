@@ -1,9 +1,10 @@
 from redbot.core import commands, Config
 
 from . import cogcommands
-from .d import DiscordEvents
+from .dpy import DiscordEvents
+from .utils.abc import CompositeMetaClass
 
-class Hypixel(commands.Cog, cogcommands.CogCommands):
+class Hypixel(DiscordEvents, commands.Cog, cogcommands.CogCommands, metaclass=CompositeMetaClass):
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=69420)
@@ -12,16 +13,16 @@ class Hypixel(commands.Cog, cogcommands.CogCommands):
         self.guild_autostats_list = {}
 
         default_user = {
-            "name": None,
             "uuid": None,
-            "color": None,
+            "header_color": None,
             "timezone": None,
             "skin": None,
-            "api_key":None
+            "apikey": None
         }
 
         default_guild = {
-            "api_key": None,
+            "apikey": None,
+            "header_color": (225, 0, 221),
             "bedwars": {
                 "enabled_modules_bedwars": [
                     ("games_played_bedwars", "Games played"),
@@ -244,25 +245,3 @@ class Hypixel(commands.Cog, cogcommands.CogCommands):
         self.config.register_user(**default_user)
         self.config.register_guild(**default_guild)
 
-    def cog_unload(self):
-        for task in self.user_autostats_list.values():
-            task.cancel()
-        for task in self.guild_autostats_list.values():
-            task.cancel()
-
-    async def cog_before_invoke(self, ctx):
-        if self.enter in [ctx.command, ctx.command.root_parent]:
-            return
-
-        if self.module in [ctx.command, ctx.command.root_parent]:
-            if not await ctx.cog.config.user(ctx.author).uuid():
-                await ctx.send("You have to set a username first before being able to use this command")
-                raise commands.CheckFailure()
-
-        user_apikey = await self.config.user(ctx.author).api_key()
-        if not user_apikey:
-            guild_apikey = await self.config.guild(ctx.guild).api_key()
-
-            if not guild_apikey:
-                await ctx.send("There is no server nor personal apikey set.")
-                raise commands.CheckFailure()

@@ -35,7 +35,7 @@ class ChangeConfig():
 
     @commands.dm_only()
     @enter.command(name="apikey")
-    async def enter_apikey(self, ctx, api_key, guild: discord.Guild = None):
+    async def enter_apikey(self, ctx, apikey, guild: discord.Guild = None):
         """Set your api key
         Must be set in order to activate the other commands
         can be obtained by typing `/api` on hypixel
@@ -43,15 +43,15 @@ class ChangeConfig():
         the key is seen as a guild key and is thus used by all users of said guild
         who dont have a personal key set
         """
-        resp, status = await api_requests.request_hypixel(ctx, "test", apikey=api_key)
+        resp, status = await api_requests.request_hypixel(ctx, "test", apikey=apikey)
         if status == 403:
             await ctx.send(f"Something went wrong: \n`{resp['cause']}`")
         else:
             if guild:
-                await self.config.guild(guild).api_key.set(api_key)
+                await self.config.guild(guild).apikey.set(apikey)
                 await ctx.send("Api key set")
             else:
-                await self.config.user(ctx.author).api_key.set(api_key)
+                await self.config.user(ctx.author).apikey.set(apikey)
                 await ctx.send("Api key set")
             
     @enter.command(name="username")
@@ -63,7 +63,6 @@ class ChangeConfig():
         if status != 200:
             await ctx.send(f"Adding username `{username}` failed. Maybe it is not valid?")
         else:
-            await self.config.user(ctx.author).name.set(username)
             await self.config.user(ctx.author).uuid.set(resp["id"])
 
             await ctx.send(f"Set your MC name to `{username}`")
@@ -127,7 +126,8 @@ class ChangeConfig():
                 color = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
 
         if isinstance(color, tuple):
-            await self.config.user(ctx.author).color.set(color)
+            print(color)
+            await self.config.user(ctx.author).header_color.set(color)
             await ctx.send("Color saved")
         else:
             await ctx.send("Color not saved. Please check your input")
@@ -142,11 +142,11 @@ class ChangeConfig():
         """Reset current api key
         reset_type (optional): guild, user"""
         if reset_type == "user":
-            await self.config.user(ctx.author).api_key.set(None)
+            await self.config.user(ctx.author).apikey.set(None)
             await ctx.send("Player api key resetted")
         elif reset_type == "guild":
             if ctx.author == ctx.guild.owner:
-                await self.config.guild(ctx.guild).api_key.set(None)
+                await self.config.guild(ctx.guild).apikey.set(None)
                 await ctx.send("Guild Api key resetted")
             else:
                 await ctx.send("You must be guild owner to do this")
@@ -177,9 +177,9 @@ class ChangeConfig():
     @reset.command(name="color")
     async def reset_color(self, ctx):
         """Reset your current saved color"""
-        color = await self.config.user(ctx.author).color()
+        color = await self.config.user(ctx.author).header_color()
         if color != None:
-            await self.config.user(ctx.author).color.set(None)
+            await self.config.user(ctx.author).header_color.set(None)
             await ctx.send("Current color removed")
         else:
             await ctx.send("No saved color")

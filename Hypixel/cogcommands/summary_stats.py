@@ -25,7 +25,7 @@ class SummaryStatsCommands():
                     return
 
         for username in username_list:
-            gamemode_stats, minecraft_name, uuid = await self.username_to_stats(ctx, username, gamemode)
+            gamemode_stats, minecraft_name, uuid = await self.uuid_to_stats(ctx, username, gamemode)
 
             if gamemode_stats != None:
                 try:
@@ -61,7 +61,7 @@ class SummaryStatsCommands():
 
         if saved_stats != []:
             for username in username_list:
-                gamemode_stats, minecraft_name, uuid = await self.username_to_stats(ctx, username, gamemode)
+                gamemode_stats, minecraft_name, uuid = await self.uuid_to_stats(ctx, username, gamemode)
                 if gamemode_stats != None:
                     current_stats = await self.modules_list_get(ctx, gamemode, gamemode_stats)
 
@@ -69,7 +69,7 @@ class SummaryStatsCommands():
                         if not isinstance(username, discord.Member):
                             username = await MemberConverter().convert(ctx, username)
                         skin_b64 = await self.config.user(username).skin()
-                        color = await self.config.user(username).color()
+                        color = await self.config.user(username).header_color()
                         username = username.display_name
                     except discord.ext.commands.BadArgument:
                         skin_b64, color = None, None

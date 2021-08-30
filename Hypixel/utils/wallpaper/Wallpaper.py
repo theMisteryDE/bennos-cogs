@@ -9,7 +9,7 @@ import MinePI
 
 async def create_img(statslist, name, datapath, uuid, gamemode, xp: int = 0, comparestats: list = [], header_color: tuple = (225,0,221), skin_b64: str = None):
     # define color of text
-    COLOR_HEADER_PLAYER = tuple(header_color) if header_color != None else (225,0,221)
+    COLOR_HEADER_PLAYER = header_color
     COLOR_HEADER_STATS = (255,145,0)
     COLOR_BODY_STATS = (255,200,0)
 

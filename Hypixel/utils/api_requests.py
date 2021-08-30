@@ -5,10 +5,9 @@ import io
 from PIL import Image
 
 async def request_hypixel(ctx, uuid, topic: str = "player", apikey: str = None):
-    if apikey == None:
-        apikey = await ctx.cog.config.user(ctx.author).api_key()
-        if apikey == None:
-            apikey = await ctx.cog.config.guild(ctx.guild).api_key()
+    if not apikey:
+        apikey = await ctx.cog.get_apikey(ctx.author)
+
     url = "https://api.hypixel.net/" + topic + "?key=" + apikey + "&uuid=" + str(uuid)
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
