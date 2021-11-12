@@ -65,7 +65,7 @@ class Birthday(commands.Cog, Tasks):
         self.config.register_user(**default_user)
         self.config.register_member(**self.default_member)
 
-        self.startup_task = asyncio.create_task(self.initialize_guild_loops())
+        self.start()
 
     def check(self, m, ctx, content: str):
         return m.content.lower() == content and m.author == ctx.author
