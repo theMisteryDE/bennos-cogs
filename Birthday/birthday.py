@@ -99,7 +99,7 @@ class Birthday(commands.Cog, Tasks):
         upcoming.sort(key=operator.itemgetter(2, 1))
         passed.sort(key=operator.itemgetter(2, 1))
 
-        if mode: #Starting from the beginning of the year
+        if mode: # Starting from the beginning of the year
             bdays = upcoming + passed
         else:
             bdays = passed + upcoming
@@ -145,7 +145,7 @@ class Birthday(commands.Cog, Tasks):
     async def get_custom_message(self, user: Union[discord.User, discord.Member], msg: str = None, check: bool = False):
         now = datetime.datetime.now(pytz.timezone(await self.config.guild(user.guild).timezone()))
         bday = (await self.config.user(user).birthday()).split("-")
-        if msg == None:
+        if not msg:
             msg = await self.config.member(user).birthday_message()
         elif isinstance(user, discord.Member):
             if len(msg) > await self.config.guild(user.guild).custom_message_length():
@@ -153,10 +153,10 @@ class Birthday(commands.Cog, Tasks):
 
         try:
             age = now.year - int(bday[2])
-            if msg == None:
+            if not msg:
                 msg = "{mention} is getting {age} years old today! :partying_face:"
         except ValueError:
-            if msg == None:
+            if not msg:
                 msg = "It's {mention}'s birthday today! :partying_face:"
             age = None
             if check:
