@@ -2,15 +2,13 @@ from redbot.core import commands
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import pagify
 
+from typing import Optional
+
+import contextlib
 import discord
 import datetime
 import pytz
 import asyncio
-
-
-class TimeUpdated(BaseException):
-    """Raised to stop the main loops sleep"""
-    pass
 
 
 def done_callback(task):
@@ -19,6 +17,11 @@ def done_callback(task):
 
 
 class Tasks:
+    def __init__(self):
+        self.time_for_guild_loops: dict = {}
+        self.reset: asyncio.Event = asyncio.Event()
+        self.task_main: Optional[asyncio.Task] = None
+
     def start(self):
         if self.is_running():
             self.stop()
@@ -27,7 +30,8 @@ class Tasks:
         self.task_main.add_done_callback(done_callback)
 
     def stop(self):
-        self.task_main.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            self.task_main.cancel()
 
     def is_running(self):
         if not self.task_main:
@@ -49,6 +53,11 @@ class Tasks:
 
         self.time_for_guild_loops[guild.id] = utc_time_for_guild_loop.timestamp() if not timestamp else timestamp
 
+    async def wait_task(self, time: float):
+        await asyncio.sleep(
+            time - datetime.datetime.utcnow().timestamp()
+        )
+
     async def task_main(self):
         try:
             await self.bot.wait_until_red_ready()
@@ -58,14 +67,20 @@ class Tasks:
 
                 guild = self.bot.get_guild(next_loop[0])
 
-                try:
-                    print(next_loop[1] - datetime.datetime.utcnow().timestamp())
-                    await asyncio.sleep(
-                        int(next_loop[1] - datetime.datetime.utcnow().timestamp())
-                    )
-                    print("passed")
-                except (TimeUpdated, NotImplementedError):
-                    continue
+                wait = asyncio.create_task(self.wait_task(next_loop[1]))
+
+                await asyncio.wait(
+                    [
+                        self.reset.wait(),
+                        wait
+                    ],
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if self.reset.is_set():
+                    wait.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await wait
+                        self.reset.clear()
 
                 await self.update_time_for_guild(guild)
 
@@ -102,21 +117,20 @@ class Tasks:
                             await channel.send(embed=embed)
 
         except asyncio.CancelledError:
-            pass
-
-        except Exception as e:
-            raise e
+            raise
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
         await self.update_time_for_guild(guild)
-        self.task_main.get_coro().throw(TimeUpdated)
+        if not self.reset.is_set():
+            self.reset.set()
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild):
         if guild.id in self.time_for_guild_loops.keys():
             del self.time_for_guild_loops[guild.id]
-            self.task_main.get_coro().throw(TimeUpdated)
+            if not self.reset.is_set():
+                self.reset.set()
 
     def cog_unload(self):
         self.stop()
