@@ -65,7 +65,7 @@ class Birthday(commands.Cog, Tasks):
         self.config.register_user(**default_user)
         self.config.register_member(**self.default_member)
 
-        self.startup_task = asyncio.create_task(self.initialize_guild_loops())
+        self.start()
 
     def check(self, m, ctx, content: str):
         return m.content.lower() == content and m.author == ctx.author
@@ -99,7 +99,7 @@ class Birthday(commands.Cog, Tasks):
         upcoming.sort(key=operator.itemgetter(2, 1))
         passed.sort(key=operator.itemgetter(2, 1))
 
-        if mode: #Starting from the beginning of the year
+        if mode: # Starting from the beginning of the year
             bdays = upcoming + passed
         else:
             bdays = passed + upcoming
@@ -145,7 +145,7 @@ class Birthday(commands.Cog, Tasks):
     async def get_custom_message(self, user: Union[discord.User, discord.Member], msg: str = None, check: bool = False):
         now = datetime.datetime.now(pytz.timezone(await self.config.guild(user.guild).timezone()))
         bday = (await self.config.user(user).birthday()).split("-")
-        if msg == None:
+        if not msg:
             msg = await self.config.member(user).birthday_message()
         elif isinstance(user, discord.Member):
             if len(msg) > await self.config.guild(user.guild).custom_message_length():
@@ -153,10 +153,10 @@ class Birthday(commands.Cog, Tasks):
 
         try:
             age = now.year - int(bday[2])
-            if msg == None:
+            if not msg:
                 msg = "{mention} is getting {age} years old today! :partying_face:"
         except ValueError:
-            if msg == None:
+            if not msg:
                 msg = "It's {mention}'s birthday today! :partying_face:"
             age = None
             if check:
@@ -167,7 +167,7 @@ class Birthday(commands.Cog, Tasks):
         msg = msg.format(name=_allowed_tags["name"], full_name=_allowed_tags["full_name"], mention=_allowed_tags["mention"], guild=_allowed_tags["guild"], date=_allowed_tags["date"], age=_allowed_tags["age"])
         return msg    
 
-    @commands.group(name="bday")
+    @commands.group(name="bday", aliases=["birthday"])
     async def bday(self, ctx):
         """Birthday settings"""
 
@@ -205,9 +205,10 @@ class Birthday(commands.Cog, Tasks):
             await ctx.send(":x: Main task is still starting up. Try again in a few seconds.")
         else:
             try:
-                tz = pytz.timezone(timezone)
+                pytz.timezone(timezone)
                 await self.config.guild(ctx.guild).timezone.set(timezone)
                 await self.update_time_for_guild(ctx.guild)
+                self.reset.set()
                 await ctx.send(f"Server timezone is now set to: `{timezone}`\nCurrent local time: `{datetime.datetime.now(pytz.timezone(timezone)).time().strftime('%H:%M:%S')}`")
             except pytz.exceptions.UnknownTimeZoneError:
                 await ctx.send(f"Timezone `{timezone}` is not valid.\nSee a list of all valid ones here: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones (Note: `TZ database names` are required.")
@@ -254,7 +255,8 @@ class Birthday(commands.Cog, Tasks):
     async def bday_custommsg_reset(self, ctx):
         """Resets your custom message to the default one"""
 
-        current_conf = await self.config.member(ctx.author).all()
+        await self.config.member(ctx.author).birthday_message.set(None)
+        await ctx.tick()
 
     @commands.guild_only()
     @bday_custommsg.command(name="show")
